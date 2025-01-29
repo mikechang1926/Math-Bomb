@@ -4866,7 +4866,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e86b56a8dee294cacab68a11db546b63, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  growthSpeed: 20
+  growthSpeed: 15
   maxSize: 300
   explosionEffect: {fileID: 738694921}
   explosionForce: 500
