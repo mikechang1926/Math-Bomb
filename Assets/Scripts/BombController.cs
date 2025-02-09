@@ -25,6 +25,8 @@ public class BombController : MonoBehaviour
     private AudioSource audioSource;
     private Vector3 originalScale;
     private bool hasExploded = false;
+    private bool isTicking = false;
+    public AudioSource backgroundMusic;
     private void Start()
     {
         // Save the original scale of the bomb
@@ -38,29 +40,60 @@ public class BombController : MonoBehaviour
         if (objectRenderer != null)
         {
             originalColor = objectRenderer.material.color;
+            Debug.Log("Original color: " + originalColor);
         }
-
-        // Start blinking red indefinitely
-        currentBlinkCoroutine = StartCoroutine(BlinkIndefinitely(redBlinkColor));
     }
 
     public void blinkGreen() {
         StartBlinkingGreen();
     }
 
+    public void startTicking() {
+        ResetBombSize();
+        isTicking = true;
+        backgroundMusic.Play();
+        if (objectRenderer != null)
+        {
+            // Start blinking red indefinitely
+            currentBlinkCoroutine = StartCoroutine(BlinkIndefinitely(redBlinkColor));
+        }
+    }
+    
     private void Update()
     {
+        if (GameManager.Instance.isPendingLevelUp)
+        {
+            isTicking = false;
+        }
+
         // If the bomb has already exploded, do nothing
         if (hasExploded) return;
 
-        // Gradually increase the bomb's size
-        transform.localScale += Vector3.one * growthSpeed * Time.deltaTime;
-
-        // Check if the bomb has reached its maximum size
-        if (transform.localScale.x >= maxSize)
+        if (isTicking) 
         {
-            Explode();
+            // Gradually increase the bomb's size
+            transform.localScale += Vector3.one * growthSpeed * Time.deltaTime;
+
+                    // Check if the bomb has reached its maximum size
+            if (transform.localScale.x >= maxSize)
+            {
+                Explode();
+            }
         }
+        else 
+        {
+            // Stop the current red blinking
+            if (currentBlinkCoroutine != null)
+            {
+                StopCoroutine(currentBlinkCoroutine);
+            }
+            backgroundMusic.Stop();
+        }
+    }
+
+    public void ResetBombSize()
+    {
+        transform.localScale = originalScale; // Restore original size
     }
 
     public void StartBlinkingGreen()
@@ -107,8 +140,11 @@ public class BombController : MonoBehaviour
 
         isTemporarilyBlinking = false;
 
-        // Resume red blinking indefinitely
-        currentBlinkCoroutine = StartCoroutine(BlinkIndefinitely(redBlinkColor));
+        if (isTicking) 
+        {
+            // Resume red blinking indefinitely
+            currentBlinkCoroutine = StartCoroutine(BlinkIndefinitely(redBlinkColor));
+        }
     }
 
 

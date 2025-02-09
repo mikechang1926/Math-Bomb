@@ -17,44 +17,91 @@ public class MathProblemManager : MonoBehaviour
     {
         GenerateNewProblem(); // Generate the first problem
     }
-
+   public void FocusOnInputField()
+    {
+        if (answerInput != null)
+        {
+            answerInput.Select(); // Selects the input field
+            answerInput.ActivateInputField(); // Ensures the field is active and ready for typing
+            Debug.Log("Focused on entry field.");
+        }
+        else
+        {
+            Debug.LogError("UIManager: No InputField assigned in the Inspector!");
+        }
+    }
     private void Update()
     {
-        if (GameManager.Instance.IsGameOver)
-        {
+        if (GameManager.Instance.isPendingLevelUp || GameManager.Instance.IsGameOver) {
             problemTextObj.SetActive(false);
             answerInputObj.SetActive(false);
+            Debug.Log("Level up pending, disabling math problems.");
+            return;
+        } else 
+        {
+            problemTextObj.SetActive(true);
+            answerInputObj.SetActive(true);
         }
         // Check for user input when Enter/Return is pressed
         if (Input.GetKeyDown(KeyCode.Return))
         {
             CheckAnswer();
         }
+        else {
+            FocusOnInputField();
+        }
     }
 
     private void GenerateNewProblem()
     {
-        // Generate two random numbers for the math problem
-        int number1 = Random.Range(1, 10); // Random number between 1 and 9
-        int number2 = Random.Range(1, 10); // Random number between 1 and 9
+        int level = GameManager.Instance.currentLevelIndex;
+        Debug.Log($"Generating problem for Level {level}");
 
-        // Randomly pick an operator (addition or multiplication)
-        int operatorType = Random.Range(0, 2); // 0 for addition, 1 for multiplication
+        // Scale difficulty faster
+        int minRange = 1 + (level * 2);
+        int maxRange = 10 + (level * 3);
+
+        int number1 = Random.Range(minRange, maxRange);
+        int number2 = Random.Range(minRange, maxRange);
+
+        // Introduce more operators at higher levels
+        int operatorType = Random.Range(0, level >= 5 ? 4 : level >= 3 ? 3 : 2);
 
         if (operatorType == 0) // Addition
         {
             correctAnswer = number1 + number2;
             problemText.text = $"{number1} + {number2} = ?";
         }
-        else // Multiplication
+        else if (operatorType == 1) // Multiplication
         {
             correctAnswer = number1 * number2;
-            problemText.text = $"{number1} x {number2} = ?";
+            problemText.text = $"{number1} × {number2} = ?";
+        }
+        else if (operatorType == 2) // Subtraction (unlocked at level 3)
+        {
+            if (number1 < number2) (number1, number2) = (number2, number1);
+            correctAnswer = number1 - number2;
+            problemText.text = $"{number1} - {number2} = ?";
+        }
+        else if (operatorType == 3) // Division (unlocked at level 5)
+        {
+            number1 = Random.Range(minRange, maxRange);
+            number2 = Random.Range(1, number1);
+            number1 = (number1 / number2) * number2; // Ensure clean division
+            correctAnswer = number1 / number2;
+            problemText.text = $"{number1} ÷ {number2} = ?";
         }
 
-        // Clear the input field for the new problem
+        // Introduce multi-step problems at level 7+
+        if (level >= 7)
+        {
+            int number3 = Random.Range(minRange, maxRange);
+            problemText.text = $"{number1} + {number2} × {number3} = ?";
+            correctAnswer = number1 + (number2 * number3);
+        }
+
         answerInput.text = "";
-        answerInput.ActivateInputField(); // Focus on the input field
+        answerInput.ActivateInputField();
     }
 
     private void CheckAnswer()
